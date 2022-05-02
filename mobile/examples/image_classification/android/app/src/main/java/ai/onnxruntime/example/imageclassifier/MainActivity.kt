@@ -123,20 +123,8 @@ class MainActivity : AppCompatActivity() {
             return
 
         runOnUiThread {
-            percentMeter.progress = (result.detectedScore[0] * 100).toInt()
-            detected_item_1.text = labelData[result.detectedIndices[0]]
-            detected_item_value_1.text = "%.2f%%".format(result.detectedScore[0] * 100)
 
-            if (result.detectedIndices.size > 1) {
-                detected_item_2.text = labelData[result.detectedIndices[1]]
-                detected_item_value_2.text = "%.2f%%".format(result.detectedScore[1] * 100)
-            }
-
-            if (result.detectedIndices.size > 2) {
-                detected_item_3.text = labelData[result.detectedIndices[2]]
-                detected_item_value_3.text = "%.2f%%".format(result.detectedScore[2] * 100)
-            }
-
+            detected_item_value_1.text = result.bboxstring
             inference_time_value.text = result.processTimeMs.toString() + "ms"
         }
     }
@@ -149,7 +137,7 @@ class MainActivity : AppCompatActivity() {
     // Read ort model into a ByteArray, run in background
     private suspend fun readModel(): ByteArray = withContext(Dispatchers.IO) {
         val modelID =
-            if (enableQuantizedModel) R.raw.mobilenet_v2_uint8 else R.raw.mobilenet_v2_float
+            if (enableQuantizedModel) R.raw.questiondetector_opt else R.raw.questiondetector_opt
         resources.openRawResource(modelID).readBytes()
     }
 

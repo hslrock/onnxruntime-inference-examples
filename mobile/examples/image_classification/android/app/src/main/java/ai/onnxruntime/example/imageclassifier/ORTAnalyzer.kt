@@ -11,12 +11,14 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import java.util.*
 import kotlin.math.exp
+import android.util.Log
 
 
 internal data class Result(
         var detectedIndices: List<Int> = emptyList(),
         var detectedScore: MutableList<Float> = mutableListOf<Float>(),
-        var processTimeMs: Long = 0
+        var processTimeMs: Long = 0,
+        var bboxstring: String =""
 ) {}
 
 internal class ORTAnalyzer(
@@ -77,19 +79,20 @@ internal class ORTAnalyzer(
         val imgBitmap = image.toBitmap()
         val rawBitmap = imgBitmap?.let { Bitmap.createScaledBitmap(it, 224, 224, false) }
         val bitmap = rawBitmap?.rotate(image.imageInfo.rotationDegrees.toFloat())
-
         if (bitmap != null) {
             var result = Result()
 
             val imgData = preProcess(bitmap)
             val inputName = ortSession?.inputNames?.iterator()?.next()
-            val shape = longArrayOf(1, 3, 224, 224)
+            val shape = longArrayOf(1, 3, 320, 320)
             val env = OrtEnvironment.getEnvironment()
             env.use {
                 val tensor = OnnxTensor.createTensor(env, imgData, shape)
                 val startTime = SystemClock.uptimeMillis()
+
                 tensor.use {
                     val output = ortSession?.run(Collections.singletonMap(inputName, tensor))
+
                     output.use {
                         result.processTimeMs = SystemClock.uptimeMillis() - startTime
                         @Suppress("UNCHECKED_CAST")
@@ -98,6 +101,11 @@ internal class ORTAnalyzer(
                         result.detectedIndices = getTop3(probabilities)
                         for (idx in result.detectedIndices) {
                             result.detectedScore.add(probabilities[idx])
+
+                            result.bboxstring="%d,%d,%d,%d".format(rawOutput[0].toInt(),rawOutput[1].toInt(),rawOutput[2].toInt(),rawOutput[3].toInt())
+                            //result.detectedScore.add(rawOutput[0])
+                            //result.detectedScore.add(rawOutput[0])
+                            break
                         }
                     }
                 }
